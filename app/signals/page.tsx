@@ -11,7 +11,10 @@ import {
   StatusBadge,
 } from "@/app/components/intel-ui";
 import { useInvestigation } from "@/app/components/use-investigation";
-import type { EvidenceItem } from "@/app/lib/intelligence";
+import {
+  getSecuritySignalCoverage,
+  type EvidenceItem,
+} from "@/app/lib/intelligence";
 
 export default function SignalsPage() {
   const { data, ready } = useInvestigation();
@@ -24,6 +27,9 @@ export default function SignalsPage() {
     return <Shell><EmptyInvestigation /></Shell>;
   }
 
+  const coverage = getSecuritySignalCoverage(data);
+  const riskUnavailable = !data.risk.available || coverage.allUnavailable;
+
   return (
     <Shell>
       <PageHeader
@@ -35,7 +41,7 @@ export default function SignalsPage() {
       <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel>
           <Eyebrow>Threat signal matrix</Eyebrow>
-          <SectionTitle>Security telemetry</SectionTitle>
+          <SectionTitle>Security signals</SectionTitle>
 
           <div className="mt-6 space-y-3">
             {data.evidence.map((item) => (
@@ -49,27 +55,37 @@ export default function SignalsPage() {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-7">
             <div>
-              <p className="font-serif text-6xl font-bold">
+              <p className={`font-serif text-6xl font-bold ${riskUnavailable ? "text-slate-500" : "text-slate-950"}`}>
                 {data.risk.score ?? "—"}
                 <span className="text-xl text-[#b57492]">/100</span>
               </p>
 
-              <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[#d52b76]">
-                {data.risk.level}
+              <p className={`mt-2 text-xs font-black uppercase tracking-[0.2em] ${riskUnavailable ? "text-slate-500" : "text-[#d52b76]"}`}>
+                {riskUnavailable ? "UNAVAILABLE" : data.risk.level}
               </p>
             </div>
 
-            <RiskGauge score={data.risk.score} />
+            <RiskGauge score={riskUnavailable ? null : data.risk.score} unavailable={riskUnavailable} />
           </div>
 
-          <div className="mt-7 rounded-[20px] bg-[#fff0f6] p-5">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#b65d85]">
-              Calculation path
+          <div className={`mt-7 rounded-[20px] p-5 ${riskUnavailable ? "bg-slate-100" : "bg-[#fff0f6]"}`}>
+            <p className={`text-[9px] font-black uppercase tracking-[0.18em] ${riskUnavailable ? "text-slate-500" : "text-[#b65d85]"}`}>
+              Risk assessment
             </p>
 
-            <p className="mt-3 font-mono text-xs leading-6">
-              {data.risk.formula}
-            </p>
+            {riskUnavailable ? (
+              <>
+                <p className="mt-3 text-sm font-bold text-slate-700">Insufficient security telemetry</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">The available data is not sufficient to calculate a defensible risk score.</p>
+              </>
+            ) : (
+              <p className="mt-3 font-mono text-xs leading-6">{data.risk.formula}</p>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
+              <span><strong className="font-mono text-slate-700">{coverage.evaluated} of {coverage.total}</strong> evaluated</span>
+              <span><strong className="font-mono text-slate-700">{coverage.unavailable}</strong> unavailable</span>
+            </div>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -91,6 +107,10 @@ export default function SignalsPage() {
                   </p>
                 </div>
               ))
+            ) : riskUnavailable ? (
+              <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+                No weighted risk conclusion is available because the required security signals could not be evaluated.
+              </div>
             ) : (
               <div className="rounded-[18px] bg-[#effcf4] p-4 text-sm font-bold text-[#207047]">
                 No weighted risk indicators detected.
@@ -171,7 +191,10 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
             </span>
           )}
 
-          <StatusBadge label={item.status} status={item.status} />
+          <StatusBadge
+            label={item.status === "CLEAR" ? "NOT DETECTED" : item.status}
+            status={item.status}
+          />
         </div>
       </summary>
 
@@ -209,21 +232,31 @@ function Meta({
   );
 }
 
-function RiskGauge({ score }: { score: number | null }) {
+function RiskGauge({
+  score,
+  unavailable = false,
+}: {
+  score: number | null;
+  unavailable?: boolean;
+}) {
   const value = score ?? 0;
 
   return (
     <div
       className="grid h-32 w-32 place-items-center rounded-full"
-      style={{
-        background: `conic-gradient(#e9317c ${value * 3.6}deg, #f7d9e5 0deg)`,
-      }}
+      style={
+        unavailable
+          ? { background: "#e2e8f0" }
+          : {
+              background: `conic-gradient(#e9317c ${value * 3.6}deg, #f7d9e5 0deg)`,
+            }
+      }
     >
       <div className="grid h-24 w-24 place-items-center rounded-full bg-white">
         <div className="text-center">
           <p className="text-2xl font-black">{score ?? "—"}</p>
-          <p className="text-[8px] font-black uppercase tracking-[0.15em] text-[#ad6485]">
-            risk score
+          <p className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">
+            {unavailable ? "unavailable" : "risk score"}
           </p>
         </div>
       </div>

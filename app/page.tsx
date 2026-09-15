@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   HISTORY_KEY,
@@ -11,6 +12,11 @@ import {
   mapUrl,
   saveLatestInvestigation,
 } from "@/app/lib/intelligence";
+import {
+  addToWatchlist,
+  createInvestigation,
+  saveInvestigation,
+} from "@/app/lib/investigations";
 
 import {
   DataBox,
@@ -30,6 +36,8 @@ export default function OverviewPage() {
   const [inputError, setInputError] = useState("");
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<string[]>([]);
+  const [actionMessage, setActionMessage] = useState("");
+  const router = useRouter();
 
   function refreshHistory() {
     try {
@@ -150,6 +158,32 @@ export default function OverviewPage() {
     void lookup(value);
   }
 
+  function createCaseFromLookup() {
+    if (!data) return;
+    const item = saveInvestigation(createInvestigation(data));
+    router.push(`/investigations/${encodeURIComponent(item.id)}`);
+  }
+
+  function saveLookupToWatchlist() {
+    if (!data) return;
+    addToWatchlist(data.ip, "", new Date().toISOString());
+    setActionMessage(`${data.ip} saved to the browser-local watchlist.`);
+  }
+
+  function exportLookupEvidence() {
+    if (!data) return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `ip-intelligence-${data.ip.replaceAll(":", "-")}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setActionMessage("Evidence JSON exported.");
+  }
+
   return (
     <Shell>
       <section className="cyber-grid relative overflow-hidden rounded-[28px] border border-blue-100 bg-gradient-to-b from-blue-50 via-[#f8fbff] to-white px-5 pb-7 pt-8 shadow-[0_20px_60px_rgba(37,99,235,0.07)] sm:px-10 sm:pb-10 sm:pt-11">
@@ -258,7 +292,25 @@ export default function OverviewPage() {
                   <Pill>{data.performance.responseTimeMs} ms</Pill>
                   <Pill>Cache {data.performance.cache}</Pill>
                 </div>
+
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                  <button type="button" onClick={createCaseFromLookup} className="rounded-lg bg-blue-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+                    Create investigation
+                  </button>
+                  <button type="button" onClick={saveLookupToWatchlist} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-[10px] font-bold text-blue-700 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+                    Add to watchlist
+                  </button>
+                  <button type="button" onClick={exportLookupEvidence} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+                    Export evidence
+                  </button>
+                </div>
               </div>
+
+              {actionMessage && (
+                <p role="status" className="border-b border-blue-100 bg-blue-50/60 px-5 py-2 text-xs font-semibold text-blue-700">
+                  {actionMessage}
+                </p>
+              )}
 
               <div className="grid gap-px border-t border-slate-200/80 bg-slate-200/80 sm:grid-cols-2 lg:grid-cols-4">
                 <PreviewStat
@@ -370,6 +422,21 @@ export default function OverviewPage() {
             description="Processing pipeline, normalized data, source responses and reports."
             href="/evidence"
           />
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-500">
+          {[
+            ["01", "Enrich"],
+            ["02", "Correlate"],
+            ["03", "Assess"],
+            ["04", "Decide"],
+            ["05", "Document"],
+          ].map(([number, label]) => (
+            <span key={label} className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-slate-200">
+              <span className="font-mono text-[9px] text-blue-600">{number}</span>
+              {label}
+            </span>
+          ))}
         </div>
       </section>
 

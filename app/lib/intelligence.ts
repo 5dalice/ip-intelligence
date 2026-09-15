@@ -125,6 +125,21 @@ export type IpData = {
   note: string;
 };
 
+export function getSecuritySignalCoverage(data: Pick<IpData, "evidence">) {
+  const total = data.evidence.length;
+  const evaluated = data.evidence.filter(
+    (item) => item.status !== "UNKNOWN"
+  ).length;
+
+  return {
+    evaluated,
+    unavailable: total - evaluated,
+    total,
+    allUnavailable: total > 0 && evaluated === 0,
+    fullyEvaluated: total > 0 && evaluated === total,
+  };
+}
+
 export const LATEST_KEY = "ip-intelligence-latest";
 export const HISTORY_KEY = "ip-intelligence-history";
 
@@ -199,7 +214,9 @@ export function buildInvestigationReport(data: IpData) {
             `- ${item.indicator}: +${item.points}\n  ${item.reason}`
         )
         .join("\n")
-    : "No weighted risk indicators detected.";
+    : getSecuritySignalCoverage(data).allUnavailable
+      ? "Insufficient security telemetry to calculate a defensible risk score."
+      : "No weighted risk indicators detected.";
 
   const pipeline = data.pipeline
     .map(

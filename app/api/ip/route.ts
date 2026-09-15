@@ -903,7 +903,7 @@ function calculateRisk(
       score: null,
       level: "UNAVAILABLE",
       formula:
-        "No security signals available",
+        "Insufficient security telemetry to calculate a defensible risk score",
       contributions:
         [] as RiskContribution[],
     };
@@ -1156,7 +1156,9 @@ function buildSummary(input: {
       : "Approximate geolocation is unavailable.";
 
   let securitySummary =
-    "No weighted security indicators were detected.";
+    unknown === Object.keys(input.security).length
+      ? "Security signal evaluation was unavailable."
+      : "No weighted security indicators were detected among evaluated signals.";
 
   if (detected.length) {
     securitySummary =

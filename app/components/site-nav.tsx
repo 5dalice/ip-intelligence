@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 
 const links = [
   { href: "/", label: "Overview" },
+  { href: "/investigations", label: "Investigations" },
   { href: "/network", label: "Network" },
   { href: "/signals", label: "Signals" },
   { href: "/dns", label: "DNS" },
   { href: "/evidence", label: "Evidence" },
+  { href: "/service", label: "Service" },
 ];
 
 export function SiteNav() {
@@ -48,7 +50,7 @@ export function SiteNav() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-lg px-4 py-2 text-[11px] font-bold transition ${
+                  className={`rounded-lg px-3 py-2 text-[11px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 ${
                     active
                       ? "bg-white text-blue-700 shadow-sm"
                       : "text-slate-500 hover:text-slate-950"
@@ -62,7 +64,7 @@ export function SiteNav() {
 
           <Link
             href="/"
-            className="rounded-xl bg-blue-600 px-5 py-3 text-[11px] font-bold text-white shadow-lg shadow-blue-600/15 transition hover:bg-blue-700"
+            className="rounded-xl bg-blue-600 px-5 py-3 text-[11px] font-bold text-white shadow-lg shadow-blue-600/15 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
           >
             Investigate IP
           </Link>
@@ -79,7 +81,7 @@ export function SiteNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`shrink-0 rounded-lg px-3 py-2 text-[10px] font-bold ${
+                className={`shrink-0 rounded-lg px-3 py-2 text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 ${
                   active
                     ? "bg-blue-50 text-blue-700"
                     : "text-slate-500"

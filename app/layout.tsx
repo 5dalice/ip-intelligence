@@ -3,9 +3,9 @@ import "./globals.css";
 import { SiteNav } from "@/app/components/site-nav";
 
 export const metadata: Metadata = {
-  title: "IP Intelligence Workstation",
+  title: "Security Investigation & Enrichment Workstation",
   description:
-    "Investigate network ownership, DNS, RDAP and security signals for public IP addresses.",
+    "Analyst-oriented IP enrichment, evidence correlation and explainable risk assessment.",
 };
 
 export default function RootLayout({
